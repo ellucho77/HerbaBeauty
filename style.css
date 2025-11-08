@@ -1,0 +1,218 @@
+/* === Estilo general del sitio (versión verde moderna 2025) === */
+body {
+  font-family: "Poppins", "Segoe UI", sans-serif;
+  background: linear-gradient(180deg, #798F78 0%, #A2B8A0 5000%);
+  color: #333;
+  min-height: 100vh;
+}
+
+/* Tarjetas principales */
+.card {
+  border-radius: 1.2rem;
+  background-color: #ffffff;
+  border: none;
+  box-shadow: 0 8px 20px rgba(118, 140, 117, 0.2);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(118, 140, 117, 0.3);
+}
+
+/* Encabezados */
+h1, h2, h4 {
+  color: #4F6651;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+label.form-label {
+  color: #5d725f;
+  font-weight: 500;
+}
+
+/* === Inputs y selects === */
+.form-control,
+.form-select {
+  border: 1px solid #b7cbb8;
+  border-radius: 10px;
+  background-color: #f6faf6;
+  transition: all 0.3s ease;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #768C75;
+  box-shadow: 0 0 0 0.25rem rgba(118, 140, 117, 0.35);
+}
+
+/* Botón principal */
+.btn-primary {
+  background: linear-gradient(135deg, #768C75, #97B393);
+  border: none;
+  color: white;
+  border-radius: 50px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  padding: 10px 25px;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #637B63, #8AA788);
+  box-shadow: 0 6px 15px rgba(118, 140, 117, 0.4);
+  transform: translateY(-2px);
+}
+
+/* === Cards de servicios === */
+.servicio-card {
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: 2px solid transparent;
+  border-radius: 16px;
+  overflow: hidden;
+  height: 100%;
+  background-color: #f6faf6;
+  box-shadow: 0 4px 10px rgba(118, 140, 117, 0.15);
+}
+
+.servicio-card:hover {
+  transform: scale(1.05);
+  border-color: #768C75;
+  box-shadow: 0 0 20px rgba(118, 140, 117, 0.25);
+}
+
+.servicio-card.active {
+  border-color: #768C75;
+  background-color: #e5efe5;
+  box-shadow: 0 0 20px rgba(118, 140, 117, 0.35);
+}
+
+.servicio-card img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  border-bottom: 1px solid #b7cbb8;
+}
+
+.servicio-card .card-body {
+  text-align: center;
+  padding: 1rem;
+}
+
+.servicio-card h6 {
+  font-weight: 600;
+  color: #4F6651;
+  font-size: 0.95rem;
+  word-wrap: break-word;
+}
+
+/* === Lista de turnos === */
+#listaTurnos li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 12px;
+  border-radius: 10px;
+  background-color: #f6faf6;
+  border: 1px solid #c6d6c5;
+  font-size: 0.95rem;
+  box-shadow: 0 2px 6px rgba(118, 140, 117, 0.1);
+  margin-bottom: 8px;
+}
+
+#listaTurnos li strong {
+  color: #4F6651;
+}
+
+.badge {
+  background-color: #97B393 !important;
+  color: white !important;
+  font-size: 0.85rem;
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+.btn-outline-danger {
+  border-radius: 10px;
+  border-color: #97B393;
+  color: #4F6651;
+  transition: 0.3s ease;
+}
+
+.btn-outline-danger:hover {
+  background-color: #768C75;
+  color: white;
+  box-shadow: 0 4px 10px rgba(118, 140, 117, 0.3);
+}
+
+/* Botón borrar todos */
+#borrarTodo {
+  background: #fff;
+  border: 2px solid #97B393;
+  color: #4F6651;
+  font-weight: 600;
+  border-radius: 50px;
+  transition: all 0.3s ease;
+}
+
+#borrarTodo:hover {
+  background-color: #768C75;
+  color: white;
+  box-shadow: 0 6px 15px rgba(118, 140, 117, 0.4);
+}
+
+/* Estado de turno finalizado */
+#listaTurnos li.finalizado {
+  background-color: #e5efe5;
+  opacity: 0.85;
+}
+
+/* Botón finalizar */
+.btn-outline-success {
+  border-radius: 10px;
+  border-color: #768C75;
+  color: #768C75;
+  transition: 0.3s ease;
+}
+
+.btn-outline-success:hover {
+  background-color: #768C75;
+  color: white;
+  box-shadow: 0 4px 10px rgba(118, 140, 117, 0.3);
+}
+
+/* Historial */
+#historialTurnos li.finalizado {
+  background-color: #e9f2e9;
+  border-left: 4px solid #768C75;
+  margin-bottom: 5px;
+  border-radius: 8px;
+}
+
+.text-verde {
+  color: #4F6651;
+}
+
+/* Título y logo */
+.titulo-consultorio {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  font-weight: 700;
+  font-size: 1.8rem;
+  color: #4F6651;
+  flex-wrap: wrap;
+}
+
+.logo-consultorio {
+  height: 350px;
+  width: auto;
+  transition: transform 0.3s ease;
+}
+
+
+
