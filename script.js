@@ -7,9 +7,15 @@ const form = document.getElementById("formTurno");
 const listaTurnos = document.getElementById("listaTurnos");
 const borrarTodo = document.getElementById("borrarTodo");
 const contenedorServicios = document.getElementById("servicios");
+const filtroFecha = document.getElementById("filtroFechaHistorial");
+const limpiarFiltro = document.getElementById("limpiarFiltro");
+const historialTurnos = document.getElementById("historialTurnos");
+const inputFecha = document.getElementById("fecha");
 
 // === Variables de estado ===
 let servicioSeleccionado = null;
+let historialCache = [];
+let fechasOcupadas = new Set();
 
 // === Lista de servicios ===
 const servicios = [
@@ -19,7 +25,7 @@ const servicios = [
   { nombre: "Plasma pen", img: "img/Plasma pen.jpg" },
   { nombre: "Criolipólisis", img: "img/criolipolisis.jpg" },
   { nombre: "Mesoterapia capilar", img: "img/Mesoterapia capilar.jpg" },
-  { nombre: "Plasma rico en plaquetas (Rostro, cuello, escote, manos)", img: "img/Plasma rico en plaquetas(Rostro,cuello,escote,manos).jpg" }
+  { nombre: "Plasma rico en plaquetas (Rostro, cuello, manos)", img: "img/Plasma rico en plaquetas(Rostro,cuello,escote,manos).jpg" }
 ];
 
 // === Crear las cards de servicios ===
@@ -31,7 +37,7 @@ servicios.forEach(serv => {
   card.className = "card servicio-card text-center h-100";
 
   card.innerHTML = `
-    <img src="${serv.img}" alt="${serv.nombre}" class="card-img-top">
+    <img src="${serv.img}" alt="${serv.nombre}" class="card-img-top img-fluid" style="object-fit: cover;">
     <div class="card-body d-flex align-items-center justify-content-center">
       <h6 class="card-title">${serv.nombre}</h6>
     </div>
@@ -52,22 +58,6 @@ async function guardarTurno(turno) {
   await addDoc(collection(db, "turnos"), turno);
 }
 
-// === Obtener todos los turnos activos ===
-async function obtenerTurnos() {
-  const snapshot = await getDocs(collection(db, "turnos"));
-  const turnos = [];
-  snapshot.forEach(docSnap => turnos.push({ id: docSnap.id, ...docSnap.data() }));
-  return turnos;
-}
-
-// === Obtener historial ===
-async function obtenerHistorial() {
-  const snapshot = await getDocs(collection(db, "historialTurnos"));
-  const historial = [];
-  snapshot.forEach(docSnap => historial.push({ id: docSnap.id, ...docSnap.data() }));
-  return historial;
-}
-
 // === Eliminar turno ===
 async function eliminarTurno(id) {
   await deleteDoc(doc(db, "turnos", id));
@@ -81,8 +71,7 @@ async function finalizarTurno(turno) {
 }
 
 // === Mostrar turnos activos ===
-async function mostrarTurnos() {
-  const turnos = await obtenerTurnos();
+function renderizarTurnos(turnos) {
   listaTurnos.innerHTML = "";
 
   if (turnos.length === 0) {
@@ -91,6 +80,7 @@ async function mostrarTurnos() {
     return;
   }
 
+  fechasOcupadas = new Set(turnos.map(t => t.fecha));
   turnos.sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora));
 
   turnos.forEach((t) => {
@@ -111,23 +101,49 @@ async function mostrarTurnos() {
 
     // Eliminar turno
     li.querySelector(".btn-outline-danger").addEventListener("click", async () => {
-      if (confirm("¿Eliminar este turno?")) {
+      const confirm = await Swal.fire({
+        title: "¿Eliminar turno?",
+        text: "Esta acción no se puede deshacer.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Sí, eliminar",
+        cancelButtonText: "Cancelar",
+      });
+      if (confirm.isConfirmed) {
         await eliminarTurno(t.id);
-        mostrarTurnos();
+        Swal.fire("Eliminado", "El turno fue eliminado.", "success");
       }
     });
 
     // Finalizar turno
     li.querySelector(".btn-outline-success").addEventListener("click", async () => {
-      if (confirm("¿Marcar este turno como finalizado?")) {
+      const confirm = await Swal.fire({
+        title: "¿Finalizar turno?",
+        text: "Se moverá al historial de turnos.",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Sí, finalizar",
+        cancelButtonText: "Cancelar",
+      });
+      if (confirm.isConfirmed) {
         await finalizarTurno(t);
-        mostrarTurnos();
+        Swal.fire("Turno finalizado", "El turno se movió al historial.", "success");
       }
     });
 
     listaTurnos.appendChild(li);
   });
+
+  actualizarFechasCalendario();
 }
+
+// === Escuchar turnos en tiempo real ===
+const turnosRef = collection(db, "turnos");
+onSnapshot(turnosRef, (snapshot) => {
+  const turnos = [];
+  snapshot.forEach(docSnap => turnos.push({ id: docSnap.id, ...docSnap.data() }));
+  renderizarTurnos(turnos);
+});
 
 // === Guardar nuevo turno desde el formulario ===
 form.addEventListener("submit", async (e) => {
@@ -138,14 +154,17 @@ form.addEventListener("submit", async (e) => {
   const hora = document.getElementById("hora").value;
 
   if (!nombre || !fecha || !hora || !servicioSeleccionado) {
-    alert("Por favor completa todos los campos y selecciona un servicio");
+    Swal.fire("Campos incompletos", "Por favor completa todos los campos y selecciona un servicio.", "info");
     return;
   }
 
-  const turnosActuales = await obtenerTurnos();
-  const existeActivo = turnosActuales.some(t => t.fecha === fecha && t.hora === hora);
+  const snapshot = await getDocs(turnosRef);
+  const existeActivo = snapshot.docs.some(doc => {
+    const data = doc.data();
+    return data.fecha === fecha && data.hora === hora;
+  });
   if (existeActivo) {
-    alert("⚠️ Ya existe un turno registrado para esa fecha y hora.");
+    Swal.fire("Turno ocupado", "Ya existe un turno registrado para esa fecha y hora.", "warning");
     return;
   }
 
@@ -158,8 +177,7 @@ form.addEventListener("submit", async (e) => {
   };
 
   await guardarTurno(turno);
-  mostrarTurnos();
-
+  Swal.fire("Guardado", "El turno fue registrado correctamente.", "success");
   form.reset();
   document.querySelectorAll(".servicio-card").forEach(c => c.classList.remove("active"));
   servicioSeleccionado = null;
@@ -167,22 +185,27 @@ form.addEventListener("submit", async (e) => {
 
 // === Borrar todos los turnos activos ===
 borrarTodo.addEventListener("click", async () => {
-  if (confirm("¿Seguro que querés eliminar todos los turnos activos?")) {
-    const turnos = await obtenerTurnos();
-    for (const t of turnos) {
-      await eliminarTurno(t.id);
+  const confirm = await Swal.fire({
+    title: "¿Eliminar todos los turnos?",
+    text: "Esto eliminará todos los turnos activos.",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Sí, eliminar",
+    cancelButtonText: "Cancelar",
+  });
+
+  if (confirm.isConfirmed) {
+    const snapshot = await getDocs(turnosRef);
+    for (const docSnap of snapshot.docs) {
+      await eliminarTurno(docSnap.id);
     }
-    mostrarTurnos();
+    Swal.fire("Eliminados", "Todos los turnos fueron eliminados.", "success");
   }
 });
 
-// === 🔁 Escucha en tiempo real los turnos finalizados ===
+// === Historial en tiempo real ===
 const historialRef = collection(db, "historialTurnos");
-const filtroFecha = document.getElementById("filtroFechaHistorial");
-const limpiarFiltro = document.getElementById("limpiarFiltro");
-const historialTurnos = document.getElementById("historialTurnos");
 
-// Función para renderizar historial
 function renderizarHistorial(turnos, fechaFiltro = null) {
   historialTurnos.innerHTML = "";
 
@@ -214,24 +237,18 @@ function renderizarHistorial(turnos, fechaFiltro = null) {
     });
 }
 
-// Mantener los turnos cargados en memoria
-let historialCache = [];
-
-// Escuchar los cambios en tiempo real
 onSnapshot(historialRef, (snapshot) => {
   historialCache = [];
   snapshot.forEach(docSnap => historialCache.push({ id: docSnap.id, ...docSnap.data() }));
   renderizarHistorial(historialCache, filtroFecha.value);
 });
 
-// Filtro de fecha
 if (filtroFecha) {
   filtroFecha.addEventListener("change", () => {
     renderizarHistorial(historialCache, filtroFecha.value);
   });
 }
 
-// Limpiar filtro
 if (limpiarFiltro) {
   limpiarFiltro.addEventListener("click", () => {
     filtroFecha.value = "";
@@ -239,5 +256,16 @@ if (limpiarFiltro) {
   });
 }
 
-// === Inicialización ===
-mostrarTurnos();
+// === Marcar fechas ocupadas ===
+function actualizarFechasCalendario() {
+  inputFecha.addEventListener("input", () => {
+    const seleccionada = inputFecha.value;
+    if (fechasOcupadas.has(seleccionada)) {
+      inputFecha.classList.add("is-invalid");
+      inputFecha.title = "⚠️ Ya hay un turno este día";
+    } else {
+      inputFecha.classList.remove("is-invalid");
+      inputFecha.title = "";
+    }
+  });
+}
